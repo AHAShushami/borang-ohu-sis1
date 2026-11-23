@@ -1,0 +1,7 @@
+# Local submission logs, temporary files, and scanned reference PDFs
+submissions_log.json
+last_submission_batch.json
+template_format.xls
+*.pdf
+.DS_Store
+Thumbs.db

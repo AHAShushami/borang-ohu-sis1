@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OHU/SIS-1 - Sharps Injury Surveillance Digital Form</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Sticky Control Bar (Hidden on Print) -->
+  <header class="control-bar">
+    <div class="control-bar-left">
+      <span class="brand-badge">OHU/SIS-1</span>
+      <span class="control-title">Borang Survelan Kecederaan Alatan Tajam</span>
+    </div>
+
+    <nav class="page-nav" aria-label="Navigasi Halaman">
+      <button type="button" class="page-nav-btn active" data-page="all">Semua (1–4)</button>
+      <button type="button" class="page-nav-btn" data-page="1">1/4</button>
+      <button type="button" class="page-nav-btn" data-page="2">2/4</button>
+      <button type="button" class="page-nav-btn" data-page="3">3/4</button>
+      <button type="button" class="page-nav-btn" data-page="4">4/4</button>
+    </nav>
+
+    <div class="control-actions">
+      <button type="button" class="btn btn-secondary" id="btn-wehu-meta">Medan Tambahan Sheet</button>
+      <button type="button" class="btn btn-secondary" id="btn-demo">Isi Contoh</button>
+      <button type="button" class="btn btn-secondary" id="btn-reset">Kosongkan</button>
+      <button type="button" class="btn btn-outline" id="btn-preview-row">Semak 52 Lajur</button>
+      <button type="button" class="btn btn-print" id="btn-print">Cetak / PDF</button>
+      <button type="button" class="btn btn-primary" id="btn-submit">Hantar ke Google Sheet</button>
+    </div>
+  </header>
+
+  <!-- Status Banner -->
+  <div id="status-banner" class="status-banner" role="status">
+    <span id="status-message"></span>
+    <a href="https://docs.google.com/spreadsheets/d/1EUURTiEpuX9cmlAtNeKyme_ani_spxQh-6eI5Jt_zlw/edit" target="_blank" rel="noopener" style="color:inherit;font-weight:700;text-decoration:underline;">Buka Google Sheet</a>
+  </div>
+
+  <!-- 4-Page Official Form Replica (Exact match to Document_261123_124724.pdf) -->
+  <form id="ohu-form" class="pages-container" autocomplete="off" onsubmit="return false;">
+
+    <!-- ==================== PAGE 1/4 ==================== -->
+    <section class="form-page" id="page-1" data-page-num="1">
+      <div class="page-content">
+
+        <!-- Header Box 1 -->
+        <div class="header-card">
+          <div class="header-corner-tag">OHU/SIS- 1</div>
+          <div class="moh-header-grid">
+            <div class="moh-logo-left">
+              <img src="assets/jata.png" alt="Jata Negara" />
+            </div>
+            <div class="moh-title-block">
+              <h1>
+                SHARPS INJURY SURVEILLANCE<br />
+                OCCUPATIONAL HEALTH UNIT<br />
+                MINISTRY OF HEALTH
+              </h1>
+              <div class="motto-ms">“Rakan Anda Dalam Meningkatkan Kesihatan Pekerja”</div>
+              <div class="motto-en">“Your Partner In Enhancing Workers Health”</div>
+            </div>
+            <div class="moh-logo-right">
+              <img src="assets/logo_q.png" alt="Logo Q KKM" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Header Box 2 -->
+        <div class="header-card section-banner-card">
+          <div class="header-corner-tag copy-tag">COPY FOR MINISTRY</div>
+          <h2>
+            EPIDEMIOLOGY SECTION<br />
+            (OHU/SIS-1)
+          </h2>
+        </div>
+
+        <!-- Main Particulars Box -->
+        <div class="section-box flex-grow">
+          <div class="epi-intro-title">EPIDEMIOLOGY SECTION</div>
+          <div class="epi-intro-sub">
+            (to be filled by staff from Infection Control Team / Occupational Health Unit / Occupational Safety and Health Committee Secretary)
+          </div>
+
+          <!-- 2-Column Top Split: Left Particulars Heading, Right 1-4 Notification Info -->
+          <div class="p1-top-split">
+            <div class="p1-top-left">
+              <div class="particulars-heading">PARTICULARS OF AFFECTED PERSON</div>
+              <div class="tick-instruction">(Please tick (&#10003;) where applicable)</div>
+            </div>
+            <div class="p1-top-right">
+              <div class="notif-row">
+                <span class="notif-label">1. Date of notification</span>
+                <span class="notif-colon">:</span>
+                <input type="text" id="field-notif-date" class="dotted-input" placeholder="" />
+              </div>
+              <div class="notif-row">
+                <span class="notif-label">2. State</span>
+                <span class="notif-colon">:</span>
+                <input type="text" id="field-state" class="dotted-input" />
+              </div>
+              <div class="notif-row">
+                <span class="notif-label">3. District</span>
+                <span class="notif-colon">:</span>
+                <input type="text" id="field-district" class="dotted-input" />
+              </div>
+              <div class="notif-hospital-block">
+                <span>4. Name of hospital / health clinic :</span>
+                <div style="padding-left: 12px;">
+                  <input type="text" id="field-facility-name" class="full-dotted-input" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="thick-rule" />
+
+          <!-- >>1. Name -->
+          <div class="particular-row">
+            <span><span class="reg-mark">&raquo;</span>1. Name :</span>
+            <input type="text" id="field-name" class="dotted-input" />
+          </div>
+
+          <!-- >>2. Gender -->
+          <div class="particular-row" style="gap: 36px;">
+            <span><span class="reg-mark">&raquo;</span>2. Gender :</span>
+            <label class="form-checkbox-label">
+              <span>Male</span>
+              <input type="checkbox" class="box-check single-group" data-group="gender" value="MALE" id="gender-male" />
+            </label>
+            <label class="form-checkbox-label" style="margin-left: 65px;">
+              <span>Female</span>
+              <input type="checkbox" class="box-check single-group" data-group="gender" value="FEMALE" id="gender-female" />
+            </label>
+          </div>
+
+          <!-- >>3. NRIC -->
+          <div class="particular-row stack-row">
+            <div class="row-inline">
+              <span style="min-width: 72px;"><span class="reg-mark">&raquo;</span>3. NRIC :</span>
+              <span style="min-width: 42px;">New :</span>
+              <div class="char-boxes-group">
+                <div class="char-boxes" data-box-group="nric-new" data-count="6"></div>
+                <div class="char-boxes" data-box-group="nric-new" data-count="2"></div>
+                <div class="char-boxes" data-box-group="nric-new" data-count="4"></div>
+              </div>
+            </div>
+            <div class="row-inline" style="padding-left: 80px;">
+              <span style="min-width: 42px;">Old &nbsp; :</span>
+              <div class="char-boxes-group">
+                <div class="char-boxes" data-box-group="nric-old" data-count="8"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Nationality -->
+          <div class="particular-row">
+            <span>4.&nbsp; Nationality :</span>
+            <input type="text" id="field-nationality" class="dotted-input" />
+          </div>
+
+          <!-- 5. Age on the 1st of January -->
+          <div class="particular-row">
+            <span>5.&nbsp; Age on the 1<sup>st</sup> of January :</span>
+            <div class="char-boxes" data-box-group="age-jan1" data-count="2"></div>
+            <span>Years</span>
+          </div>
+
+          <!-- 6. Department Presently attached to -->
+          <div class="particular-row">
+            <span>6.&nbsp; Department Presently attached to :</span>
+            <input type="text" id="field-department" class="dotted-input" />
+          </div>
+
+          <!-- 7. Contact number -->
+          <div class="particular-row">
+            <span>7.&nbsp; Contact number :</span>
+            <input type="text" id="field-contact" class="dotted-input" style="flex: 0 0 260px;" />
+          </div>
+
+          <!-- >>8. Date of injury -->
+          <div class="particular-row stack-row">
+            <div class="row-inline" style="gap: 32px;">
+              <span style="min-width: 112px;"><span class="reg-mark">&raquo;</span>8. Date of injury :</span>
+              <div class="date-blocks-wrapper">
+                <div class="date-block">
+                  <span class="date-block-caption">month</span>
+                  <div class="char-boxes" data-box-group="injury-month" data-count="2"></div>
+                </div>
+                <div class="date-block">
+                  <span class="date-block-caption">day</span>
+                  <div class="char-boxes" data-box-group="injury-day" data-count="2"></div>
+                </div>
+                <div class="date-block">
+                  <span class="date-block-caption">year</span>
+                  <div class="char-boxes" data-box-group="injury-year" data-count="2"></div>
+                </div>
+              </div>
+            </div>
+            <div class="row-inline" style="padding-left: 18px;">
+              <span>Time :</span>
+              <input type="text" id="field-injury-time" class="dotted-input" style="flex: 0 0 140px;" />
+              <div class="asterisk-selector" data-selector="injury-ampm">
+                *<span class="asterisk-choice" data-val="AM">am</span> / <span class="asterisk-choice" data-val="PM">pm</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 9. Date and time of seeking treatment from medical / ID team -->
+          <div class="particular-row stack-row">
+            <div class="row-inline" style="gap: 26px; align-items: flex-start;">
+              <div style="line-height: 1.32; min-width: 248px;">
+                9.&nbsp; Date and time of seeking treatment from<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;medical / ID team :
+              </div>
+              <div class="date-blocks-wrapper">
+                <div class="date-block">
+                  <span class="date-block-caption">month</span>
+                  <div class="char-boxes" data-box-group="report-month" data-count="2"></div>
+                </div>
+                <div class="date-block">
+                  <span class="date-block-caption">day</span>
+                  <div class="char-boxes" data-box-group="report-day" data-count="2"></div>
+                </div>
+                <div class="date-block">
+                  <span class="date-block-caption">year</span>
+                  <div class="char-boxes" data-box-group="report-year" data-count="2"></div>
+                </div>
+              </div>
+            </div>
+            <div class="row-inline" style="padding-left: 18px;">
+              <span>Time :</span>
+              <input type="text" id="field-report-time" class="dotted-input" style="flex: 0 0 140px;" />
+              <div class="asterisk-selector" data-selector="report-ampm">
+                *<span class="asterisk-choice" data-val="AM">am</span> / <span class="asterisk-choice" data-val="PM">pm</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 10. Duration of employment in Ministry of Health -->
+          <div class="particular-row">
+            <span>10. Duration of employment in Ministry of Health :</span>
+            <div class="char-boxes" data-box-group="moh-duration" data-count="2"></div>
+            <div class="asterisk-selector" data-selector="moh-unit">
+              *<span class="asterisk-choice" data-val="MONTH">month (s)</span> / <span class="asterisk-choice" data-val="YEAR">Year (s)</span>
+            </div>
+          </div>
+
+          <!-- 11. Duration of work in handling sharps -->
+          <div class="particular-row no-border">
+            <span>11. Duration of work in handling sharps :</span>
+            <div class="char-boxes" data-box-group="sharps-duration" data-count="2"></div>
+            <div class="asterisk-selector" data-selector="sharps-unit">
+              *<span class="asterisk-choice" data-val="MONTH">month (s)</span> / <span class="asterisk-choice" data-val="YEAR">Year (s)</span>
+            </div>
+          </div>
+
+          <div class="double-bottom-rule"></div>
+
+          <div class="inside-box-footnotes" style="margin-top: 6px; padding-top: 0;">
+            <div>(*) delete where is not applicable</div>
+            <div>(&raquo;) to be filled in the registry</div>
+          </div>
+        </div>
+
+      </div>
+      <div class="outside-page-num">1/4</div>
+    </section>
+
+    <!-- ==================== PAGE 2/4 ==================== -->
+    <section class="form-page" id="page-2" data-page-num="2">
+      <div class="page-content">
+        <div class="section-box" id="sec-job-category"></div>
+        <div class="section-box" id="sec-where-occurred"></div>
+        <div class="section-box flex-grow" id="sec-how-occurred-p2"></div>
+      </div>
+      <div class="outside-page-num">2/4</div>
+    </section>
+
+    <!-- ==================== PAGE 3/4 ==================== -->
+    <section class="form-page" id="page-3" data-page-num="3">
+      <div class="page-content">
+        <div class="section-box" id="sec-how-occurred-p3"></div>
+        <div class="section-box" id="sec-how-occurred-3g"></div>
+        <div class="section-box flex-grow" id="sec-device-p3"></div>
+      </div>
+      <div class="outside-page-num">3/4</div>
+    </section>
+
+    <!-- ==================== PAGE 4/4 ==================== -->
+    <section class="form-page" id="page-4" data-page-num="4">
+      <div class="page-content">
+        <div class="section-box" id="sec-device-4c"></div>
+        <div class="section-box" id="sec-device-5"></div>
+        <div class="section-box flex-grow" id="sec-procedure-6"></div>
+      </div>
+      <div class="outside-page-num">4/4</div>
+    </section>
+
+  </form>
+
+  <!-- Modal 1: Optional WEHU Extra Sheet Fields (4 fields not printed on paper) -->
+  <div class="modal-backdrop" id="wehu-modal">
+    <div class="modal-card" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3>Medan Pentadbiran Tambahan (WEHU Sheet 1)</h3>
+        <button type="button" class="modal-close" id="btn-close-wehu">&times;</button>
+      </div>
+      <p style="font-size:12.5px;color:#475569;margin-bottom:14px;">
+        Medan <em>Date of Notification, State, District,</em> dan <em>Name of Hospital / Health Clinic</em> kini diambil terus daripada Halaman 1 borang. Empat lajur daftar tambahan di bawah disediakan untuk melengkapkan kesemua 52 lajur Google Sheet:
+      </p>
+      <div class="wehu-extra-grid">
+        <div class="wehu-field">
+          <label for="reg-case-code">Case Code (Lajur C)</label>
+          <input type="text" id="reg-case-code" placeholder="Contoh: KDH/SIS/2026/001" />
+        </div>
+        <div class="wehu-field">
+          <label for="reg-facility-type">Type of Facility (Lajur F)</label>
+          <select id="reg-facility-type">
+            <option value="">(Auto-kesan daripada nama fasiliti)</option>
+            <option value="HOSPITAL">HOSPITAL</option>
+            <option value="KLINIK KESIHATAN">KLINIK KESIHATAN</option>
+            <option value="KLINIK PERGIGIAN">KLINIK PERGIGIAN</option>
+            <option value="PKD">PKD</option>
+            <option value="OTHERS">OTHERS</option>
+          </select>
+        </div>
+        <div class="wehu-field">
+          <label for="reg-unit">Unit (Lajur P)</label>
+          <input type="text" id="reg-unit" placeholder="Contoh: WAD 4B" />
+        </div>
+        <div class="wehu-field">
+          <label for="reg-shiftwork">Shiftwork (Lajur T)</label>
+          <select id="reg-shiftwork">
+            <option value="">(Auto-kira daripada masa kejadian)</option>
+            <option value="MORNING">MORNING</option>
+            <option value="AFTERNOON">AFTERNOON</option>
+            <option value="NIGHT">NIGHT</option>
+            <option value="OFFICE HOURS">OFFICE HOURS</option>
+            <option value="ON-CALL">ON-CALL</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:16px;text-align:right;">
+        <button type="button" class="btn btn-primary" id="btn-save-wehu">Simpan &amp; Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Preview 52-Column Row -->
+  <div class="modal-backdrop" id="preview-modal">
+    <div class="modal-card" style="max-width: 860px;">
+      <div class="modal-header">
+        <h3>Pratonton Data 52 Lajur (FORMAT OHU SIS GDRIVE WEHU SHEET 1)</h3>
+        <button type="button" class="modal-close" id="btn-close-preview">&times;</button>
+      </div>
+      <div id="preview-table-container" style="max-height: 60vh; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
