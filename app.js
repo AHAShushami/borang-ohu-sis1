@@ -548,6 +548,7 @@ function initCharBoxes() {
   document.querySelectorAll(".char-boxes").forEach(container => {
     const count = parseInt(container.dataset.count || "2", 10);
     const group = container.dataset.boxGroup;
+    const digitsOnly = container.dataset.digitsOnly === "true";
     container.innerHTML = "";
     for (let i = 0; i < count; i++) {
       const inp = document.createElement("input");
@@ -555,6 +556,10 @@ function initCharBoxes() {
       inp.maxLength = 1;
       inp.className = "char-box";
       inp.dataset.group = group;
+      if (digitsOnly) {
+        inp.dataset.digitsOnly = "true";
+        inp.inputMode = "numeric";
+      }
       container.appendChild(inp);
     }
   });
@@ -564,9 +569,18 @@ function initCharBoxes() {
     const boxes = Array.from(document.querySelectorAll(`.char-box[data-group="${groupName}"]`));
     boxes.forEach((box, idx) => {
       box.addEventListener("input", e => {
+        if (box.dataset.digitsOnly === "true") {
+          box.value = box.value.replace(/[^0-9]/g, "");
+        }
         if (e.target.value && idx < boxes.length - 1) {
           boxes[idx + 1].focus();
           boxes[idx + 1].select();
+        }
+        if (groupName === "moh-duration" && !getBoxGroupValue("moh-duration")) {
+          document.getElementById("moh-unit-selector")?.classList.remove("unit-error");
+        }
+        if (groupName === "sharps-duration" && !getBoxGroupValue("sharps-duration")) {
+          document.getElementById("sharps-unit-selector")?.classList.remove("unit-error");
         }
       });
       box.addEventListener("keydown", e => {
@@ -580,14 +594,166 @@ function initCharBoxes() {
       });
       box.addEventListener("paste", e => {
         e.preventDefault();
+        const regex = box.dataset.digitsOnly === "true" ? /[^0-9]/g : /[^A-Za-z0-9]/g;
         const pasted = (e.clipboardData || window.clipboardData)
           .getData("text")
-          .replace(/[^A-Za-z0-9]/g, "");
+          .replace(regex, "");
         for (let k = 0; k < pasted.length && idx + k < boxes.length; k++) {
           boxes[idx + k].value = pasted[k];
         }
         boxes[Math.min(idx + pasted.length, boxes.length - 1)].focus();
       });
+    });
+  });
+}
+
+function initSpecialFieldBehaviors() {
+  // 1. Digits-only fields (Contact number: no symbols or spaces allowed)
+  document.querySelectorAll(".digits-only-input").forEach(inp => {
+    inp.addEventListener("keydown", e => {
+      const allowedKeys = [
+        "Backspace", "Delete", "Tab", "Escape", "Enter",
+        "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"
+      ];
+      if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) return;
+      if (!/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+      }
+    });
+    inp.addEventListener("input", () => {
+      const cleaned = inp.value.replace(/[^0-9]/g, "");
+      if (inp.value !== cleaned) inp.value = cleaned;
+    });
+    inp.addEventListener("paste", e => {
+      e.preventDefault();
+      const pasted = (e.clipboardData || window.clipboardData).getData("text").replace(/[^0-9]/g, "");
+      const start = inp.selectionStart || 0;
+      const end = inp.selectionEnd || 0;
+      inp.value = inp.value.slice(0, start) + pasted + inp.value.slice(end);
+    });
+  });
+
+  // 2. Auto-slash DD/MM/YYYY inputs + Calendar Picker sync
+  document.querySelectorAll(".date-slash-input").forEach(inp => {
+    inp.addEventListener("keydown", e => {
+      if (e.key === "Backspace" && inp.selectionStart === inp.selectionEnd) {
+        const pos = inp.selectionStart;
+        if (pos > 0 && inp.value[pos - 1] === "/") {
+          e.preventDefault();
+          inp.value = inp.value.slice(0, pos - 2) + inp.value.slice(pos);
+          inp.setSelectionRange(pos - 2, pos - 2);
+        }
+      }
+    });
+    inp.addEventListener("input", () => {
+      const digits = inp.value.replace(/[^0-9]/g, "").slice(0, 8);
+      let formatted = digits;
+      if (digits.length > 4) {
+        formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
+      } else if (digits.length > 2) {
+        formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}`;
+      }
+      if (inp.value !== formatted) {
+        inp.value = formatted;
+      }
+      // Sync to hidden native date input if valid DD/MM/YYYY
+      const nativeDate = document.querySelector(`input[type="date"][data-sync-target="${inp.id}"]`);
+      if (nativeDate && /^\d{2}\/\d{2}\/\d{4}$/.test(formatted)) {
+        const [dd, mm, yyyy] = formatted.split("/");
+        nativeDate.value = `${yyyy}-${mm}-${dd}`;
+      }
+    });
+  });
+
+  document.querySelectorAll(".picker-icon-btn[data-picker-for]").forEach(btn => {
+    const targetId = btn.dataset.pickerFor;
+    const textInp = document.getElementById(targetId);
+    const nativeDate = document.querySelector(`input[type="date"][data-sync-target="${targetId}"]`);
+    if (!textInp || !nativeDate) return;
+
+    btn.addEventListener("click", () => {
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(textInp.value)) {
+        const [dd, mm, yyyy] = textInp.value.split("/");
+        nativeDate.value = `${yyyy}-${mm}-${dd}`;
+      }
+      if (typeof nativeDate.showPicker === "function") {
+        nativeDate.showPicker();
+      } else {
+        nativeDate.focus();
+        nativeDate.click();
+      }
+    });
+
+    nativeDate.addEventListener("change", () => {
+      if (nativeDate.value) {
+        const [yyyy, mm, dd] = nativeDate.value.split("-");
+        textInp.value = `${dd}/${mm}/${yyyy}`;
+      }
+    });
+  });
+
+  // 3. Time hh:mm inputs + Clock Picker sync
+  document.querySelectorAll(".time-colon-input").forEach(inp => {
+    inp.addEventListener("keydown", e => {
+      if (e.key === "Backspace" && inp.selectionStart === inp.selectionEnd) {
+        const pos = inp.selectionStart;
+        if (pos > 0 && inp.value[pos - 1] === ":") {
+          e.preventDefault();
+          inp.value = inp.value.slice(0, pos - 2) + inp.value.slice(pos);
+          inp.setSelectionRange(pos - 2, pos - 2);
+        }
+      }
+    });
+    inp.addEventListener("input", () => {
+      const digits = inp.value.replace(/[^0-9]/g, "").slice(0, 4);
+      let formatted = digits;
+      if (digits.length > 2) {
+        let hh = parseInt(digits.slice(0, 2), 10);
+        let mm = parseInt(digits.slice(2, 4), 10);
+        if (hh > 23) hh = 23;
+        if (digits.length === 4 && mm > 59) mm = 59;
+        const hhStr = String(hh).padStart(2, "0");
+        const mmStr = digits.length === 4 ? String(mm).padStart(2, "0") : digits.slice(2);
+        formatted = `${hhStr}:${mmStr}`;
+      }
+      if (inp.value !== formatted) {
+        inp.value = formatted;
+      }
+      const nativeTime = document.querySelector(`input[type="time"][data-time-sync-target="${inp.id}"]`);
+      if (nativeTime && /^\d{2}:\d{2}$/.test(formatted)) {
+        nativeTime.value = formatted;
+      }
+    });
+  });
+
+  document.querySelectorAll(".picker-icon-btn[data-time-picker-for]").forEach(btn => {
+    const targetId = btn.dataset.timePickerFor;
+    const textInp = document.getElementById(targetId);
+    const nativeTime = document.querySelector(`input[type="time"][data-time-sync-target="${targetId}"]`);
+    if (!textInp || !nativeTime) return;
+
+    btn.addEventListener("click", () => {
+      if (/^\d{2}:\d{2}$/.test(textInp.value)) {
+        nativeTime.value = textInp.value;
+      }
+      if (typeof nativeTime.showPicker === "function") {
+        nativeTime.showPicker();
+      } else {
+        nativeTime.focus();
+        nativeTime.click();
+      }
+    });
+
+    nativeTime.addEventListener("change", () => {
+      if (nativeTime.value) {
+        const hhmm = nativeTime.value.slice(0, 5);
+        textInp.value = hhmm;
+        const hr = parseInt(hhmm.slice(0, 2), 10);
+        const ampmSelector = targetId === "field-injury-time" ? "injury-ampm" : "report-ampm";
+        if (!isNaN(hr)) {
+          selectAsteriskValue(ampmSelector, hr >= 12 ? "PM" : "AM");
+        }
+      }
     });
   });
 }
@@ -617,6 +783,7 @@ function initAsteriskSelectors() {
         });
         ch.classList.remove("struck");
         ch.classList.add("selected");
+        sel.classList.remove("unit-error");
       });
     });
   });
@@ -709,11 +876,24 @@ function computeEmploymentGroup(durationVal, unit) {
 function inferFacilityType(facilityName) {
   const up = (facilityName || "").toUpperCase();
   if (!up) return "";
+  if (up.startsWith("PKPD")) return "PKPD";
+  if (up.startsWith("PKD") || up.includes("PKD ")) return "PKD";
   if (up.includes("HOSPITAL") || up.startsWith("HSB") || up.startsWith("HT")) return "HOSPITAL";
   if (up.includes("PERGIGIAN") || up.includes("DENTAL")) return "KLINIK PERGIGIAN";
   if (up.includes("KLINIK") || up.includes("KK ") || up.includes("HEALTH CLINIC")) return "KLINIK KESIHATAN";
-  if (up.includes("PKD")) return "PKD";
   return "OTHERS";
+}
+
+function normalizeTimeHhMm(timeStr, ampm) {
+  const raw = String(timeStr || "").trim();
+  if (!raw) return "";
+  const m = raw.match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return raw;
+  let hr = parseInt(m[1], 10);
+  const min = m[2];
+  if (ampm === "PM" && hr < 12) hr += 12;
+  if (ampm === "AM" && hr === 12) hr = 0;
+  return `${String(hr).padStart(2, "0")}:${min}`;
 }
 
 function inferShiftwork(timeStr, ampm) {
@@ -745,7 +925,7 @@ function build52ColumnRow(rowNumber = "") {
 
   const dateEntry = document.getElementById("field-notif-date").value.trim() || todayStr;
   const caseCode = document.getElementById("reg-case-code").value.trim();
-  const state = document.getElementById("field-state").value.trim();
+  const state = document.getElementById("field-state").value.trim() || "KEDAH";
   const district = document.getElementById("field-district").value.trim();
   const facilityName = document.getElementById("field-facility-name").value.trim();
   const facilityType = document.getElementById("reg-facility-type").value.trim() || inferFacilityType(facilityName);
@@ -761,27 +941,28 @@ function build52ColumnRow(rowNumber = "") {
 
   const rawNat = document.getElementById("field-nationality").value.trim().toUpperCase();
   const isMalaysian = !rawNat || rawNat === "MALAYSIAN" || rawNat === "MALAYSIA" || rawNat === "WARGANEGARA";
-  const nationality = rawNat ? (isMalaysian ? "MALAYSIAN" : "OTHERS") : "";
+  const nationality = rawNat ? (isMalaysian ? rawNat : "OTHERS") : "";
   const othersNationality = !isMalaysian && rawNat ? rawNat : "";
 
   const ageStr = getBoxGroupValue("age-jan1");
   const ageGroup = computeAgeGroup(parseInt(ageStr, 10));
 
   const department = document.getElementById("field-department").value.trim();
-  const contactNo = document.getElementById("field-contact").value.trim();
+  const contactNo = document.getElementById("field-contact").value.replace(/[^0-9]/g, "");
 
-  const injuryDate = formatDateFromBoxes("injury-month", "injury-day", "injury-year");
+  const injuryDate = document.getElementById("field-injury-date").value.trim();
   const injuryTimeRaw = document.getElementById("field-injury-time").value.trim();
   const injuryAmPm = getSelectedAsterisk("injury-ampm");
-  const injuryTime = injuryTimeRaw ? `${injuryTimeRaw} ${injuryAmPm}`.trim() : "";
+  const injuryTime = normalizeTimeHhMm(injuryTimeRaw, injuryAmPm);
   const shiftwork = document.getElementById("reg-shiftwork").value.trim() || inferShiftwork(injuryTimeRaw, injuryAmPm);
 
-  const reportDate = formatDateFromBoxes("report-month", "report-day", "report-year");
+  const reportDate = document.getElementById("field-report-date").value.trim();
   const reportTimeRaw = document.getElementById("field-report-time").value.trim();
   const reportAmPm = getSelectedAsterisk("report-ampm");
-  const reportTime = reportTimeRaw ? `${reportTimeRaw} ${reportAmPm}`.trim() : "";
+  const reportTime = normalizeTimeHhMm(reportTimeRaw, reportAmPm);
 
-  const repMonthNum = parseInt(getBoxGroupValue("report-month"), 10);
+  const parsedRepDate = parseDateDdMmYyyy(reportDate);
+  const repMonthNum = parsedRepDate ? parseInt(parsedRepDate.mm, 10) : NaN;
   const monthOfReporting = repMonthNum >= 1 && repMonthNum <= 12 ? MONTH_NAMES[repMonthNum - 1] : "";
 
   const mohDuration = getBoxGroupValue("moh-duration");
@@ -955,20 +1136,16 @@ function fillDemoData() {
 
   setBoxGroupValue("nric-new", "950412025438");
   setBoxGroupValue("nric-old", "");
-  document.getElementById("field-nationality").value = "MALAYSIAN";
+  document.getElementById("field-nationality").value = "MALAYSIA";
   setBoxGroupValue("age-jan1", "31");
   document.getElementById("field-department").value = "JABATAN PERUBATAN AM";
   document.getElementById("field-contact").value = "0124567890";
 
-  setBoxGroupValue("injury-month", "11");
-  setBoxGroupValue("injury-day", "23");
-  setBoxGroupValue("injury-year", "26");
+  document.getElementById("field-injury-date").value = "23/11/2026";
   document.getElementById("field-injury-time").value = "09:15";
   selectAsteriskValue("injury-ampm", "AM");
 
-  setBoxGroupValue("report-month", "11");
-  setBoxGroupValue("report-day", "23");
-  setBoxGroupValue("report-year", "26");
+  document.getElementById("field-report-date").value = "23/11/2026";
   document.getElementById("field-report-time").value = "09:45";
   selectAsteriskValue("report-ampm", "AM");
 
@@ -1002,6 +1179,7 @@ function fillDemoData() {
 
 function clearAllFormFields() {
   document.getElementById("ohu-form").reset();
+  document.getElementById("field-state").value = "KEDAH";
   document.getElementById("reg-case-code").value = "";
   document.getElementById("reg-facility-type").value = "";
   document.getElementById("reg-unit").value = "";
@@ -1009,6 +1187,9 @@ function clearAllFormFields() {
   document.querySelectorAll(".char-box").forEach(b => (b.value = ""));
   document.querySelectorAll(".asterisk-selector .asterisk-choice").forEach(c => {
     c.classList.remove("selected", "struck");
+  });
+  document.querySelectorAll(".asterisk-selector.unit-error").forEach(el => {
+    el.classList.remove("unit-error");
   });
   document.querySelectorAll(".box-check").forEach(cb => (cb.checked = false));
 }
@@ -1037,6 +1218,37 @@ function buildRekodLinkForRow(row) {
   return `${base}?${params.toString()}#d=${encodedRow}`;
 }
 
+function setSelectOrDynamicOption(selectId, val) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const clean = String(val || "").trim().toUpperCase();
+  const normalized = clean === "KUALA MBUDA" ? "KUALA MUDA" : clean;
+  if (!normalized) {
+    sel.value = "";
+    return;
+  }
+  const exists = Array.from(sel.options).some(opt => opt.value.toUpperCase() === normalized);
+  if (!exists) {
+    const opt = document.createElement("option");
+    opt.value = normalized;
+    opt.textContent = normalized;
+    sel.appendChild(opt);
+  }
+  sel.value = normalized;
+}
+
+function formatAnyDateToDdMmYyyy(dateStr) {
+  const s = String(dateStr || "").trim();
+  if (!s) return "";
+  const parts = s.split(/[\/\-]/);
+  if (parts.length !== 3) return s;
+  if (parts[0].length === 4) {
+    return `${parts[2].padStart(2, "0")}/${parts[1].padStart(2, "0")}/${parts[0]}`;
+  }
+  const yyyy = parts[2].length === 2 ? (parseInt(parts[2], 10) > 50 ? "19" + parts[2] : "20" + parts[2]) : parts[2];
+  return `${parts[0].padStart(2, "0")}/${parts[1].padStart(2, "0")}/${yyyy}`;
+}
+
 function parseDateDdMmYyyy(dateStr) {
   const s = String(dateStr || "").trim();
   if (!s) return null;
@@ -1058,11 +1270,9 @@ function parseTimeForForm(timeStr) {
   }
   const h24Match = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
   if (h24Match) {
-    let hr = parseInt(h24Match[1], 10);
+    const hr = parseInt(h24Match[1], 10);
     const min = h24Match[2];
     const ampm = hr >= 12 ? "PM" : "AM";
-    if (hr === 0) hr = 12;
-    else if (hr > 12) hr -= 12;
     return { timeText: `${String(hr).padStart(2, "0")}:${min}`, ampm };
   }
   return { timeText: s, ampm: "" };
@@ -1135,12 +1345,12 @@ function populateFormFrom52Row(rawRow) {
   }
 
   // Page 1 & WEHU Admin Fields
-  document.getElementById("field-notif-date").value = row[1];
+  document.getElementById("field-notif-date").value = formatAnyDateToDdMmYyyy(row[1]);
   document.getElementById("reg-case-code").value = row[2];
-  document.getElementById("field-state").value = row[3];
-  document.getElementById("field-district").value = row[4];
+  document.getElementById("field-state").value = row[3] || "KEDAH";
+  setSelectOrDynamicOption("field-district", row[4]);
   document.getElementById("reg-facility-type").value = row[5];
-  document.getElementById("field-facility-name").value = row[6];
+  setSelectOrDynamicOption("field-facility-name", row[6]);
   document.getElementById("field-name").value = row[7];
 
   // NRIC New / Old
@@ -1178,15 +1388,10 @@ function populateFormFrom52Row(rawRow) {
 
   document.getElementById("field-department").value = row[14];
   document.getElementById("reg-unit").value = row[15];
-  document.getElementById("field-contact").value = row[16];
+  document.getElementById("field-contact").value = row[16].replace(/[^0-9]/g, "");
 
   // Injury Date & Time
-  const injD = parseDateDdMmYyyy(row[17]);
-  if (injD) {
-    setBoxGroupValue("injury-month", injD.mm);
-    setBoxGroupValue("injury-day", injD.dd);
-    setBoxGroupValue("injury-year", injD.yy);
-  }
+  document.getElementById("field-injury-date").value = formatAnyDateToDdMmYyyy(row[17]);
   const injT = parseTimeForForm(row[18]);
   document.getElementById("field-injury-time").value = injT.timeText;
   if (injT.ampm) selectAsteriskValue("injury-ampm", injT.ampm);
@@ -1194,12 +1399,7 @@ function populateFormFrom52Row(rawRow) {
   document.getElementById("reg-shiftwork").value = row[19];
 
   // Report Date & Time
-  const repD = parseDateDdMmYyyy(row[20]);
-  if (repD) {
-    setBoxGroupValue("report-month", repD.mm);
-    setBoxGroupValue("report-day", repD.dd);
-    setBoxGroupValue("report-year", repD.yy);
-  }
+  document.getElementById("field-report-date").value = formatAnyDateToDdMmYyyy(row[20]);
   const repT = parseTimeForForm(row[21]);
   document.getElementById("field-report-time").value = repT.timeText;
   if (repT.ampm) selectAsteriskValue("report-ampm", repT.ampm);
@@ -1470,6 +1670,29 @@ async function submitToGoogleSheet() {
     return;
   }
 
+  // Validate required month(s) / Year(s) once duration number is filled in Item 10 or Item 11
+  const mohDur = getBoxGroupValue("moh-duration");
+  const mohUnit = getSelectedAsterisk("moh-unit");
+  const mohSel = document.getElementById("moh-unit-selector");
+  if (mohDur && !mohUnit) {
+    mohSel?.classList.add("unit-error");
+    document.getElementById("page-1")?.classList.remove("hidden-page");
+    mohSel?.scrollIntoView({ behavior: "smooth", block: "center" });
+    showStatus("error", 'Item 10: Please select "month (s) or Year (s)" after fill in the duration (NO.).');
+    return;
+  }
+
+  const sharpsDur = getBoxGroupValue("sharps-duration");
+  const sharpsUnit = getSelectedAsterisk("sharps-unit");
+  const sharpsSel = document.getElementById("sharps-unit-selector");
+  if (sharpsDur && !sharpsUnit) {
+    sharpsSel?.classList.add("unit-error");
+    document.getElementById("page-1")?.classList.remove("hidden-page");
+    sharpsSel?.scrollIntoView({ behavior: "smooth", block: "center" });
+    showStatus("error", 'Item 11: Please select "month (s) or Year (s)" after fill in the duration (NO.).');
+    return;
+  }
+
   const rowValues = build52ColumnRow("").map((val, idx) => {
     // Preserve leading zeros in Google Sheets for IC/Passport (idx 8) and Contact No (idx 16)
     if ((idx === 8 || idx === 16) && typeof val === "string" && /^0\d+$/.test(val)) {
@@ -1525,6 +1748,8 @@ document.addEventListener("DOMContentLoaded", () => {
   initFormSections();
   initCharBoxes();
   initAsteriskSelectors();
+  initSpecialFieldBehaviors();
+  document.getElementById("field-state").value = "KEDAH";
 
   document.querySelectorAll(".page-nav-btn").forEach(btn => {
     btn.addEventListener("click", () => {

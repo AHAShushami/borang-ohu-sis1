@@ -94,22 +94,79 @@
               <div class="notif-row">
                 <span class="notif-label">1. Date of notification</span>
                 <span class="notif-colon">:</span>
-                <input type="text" id="field-notif-date" class="dotted-input" placeholder="" />
+                <div class="picker-combo flex-fill">
+                  <input type="text" id="field-notif-date" class="dotted-input date-slash-input" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric" />
+                  <button type="button" class="picker-icon-btn no-print" data-picker-for="field-notif-date" title="Pilih tarikh daripada kalendar">&#128197;</button>
+                  <input type="date" class="hidden-native-picker" data-sync-target="field-notif-date" tabindex="-1" />
+                </div>
               </div>
               <div class="notif-row">
                 <span class="notif-label">2. State</span>
                 <span class="notif-colon">:</span>
-                <input type="text" id="field-state" class="dotted-input" />
+                <input type="text" id="field-state" class="dotted-input" value="KEDAH" readonly />
               </div>
               <div class="notif-row">
                 <span class="notif-label">3. District</span>
                 <span class="notif-colon">:</span>
-                <input type="text" id="field-district" class="dotted-input" />
+                <select id="field-district" class="dotted-select">
+                  <option value=""></option>
+                  <option value="BALING">BALING</option>
+                  <option value="BANDAR BAHARU">BANDAR BAHARU</option>
+                  <option value="KOTA SETAR">KOTA SETAR</option>
+                  <option value="KUALA MUDA">KUALA MUDA</option>
+                  <option value="KUBANG PASU">KUBANG PASU</option>
+                  <option value="KULIM">KULIM</option>
+                  <option value="LANGKAWI">LANGKAWI</option>
+                  <option value="PADANG TERAP">PADANG TERAP</option>
+                  <option value="PENDANG">PENDANG</option>
+                  <option value="SIK">SIK</option>
+                  <option value="YAN">YAN</option>
+                </select>
               </div>
               <div class="notif-hospital-block">
                 <span>4. Name of hospital / health clinic :</span>
                 <div style="padding-left: 12px;">
-                  <input type="text" id="field-facility-name" class="full-dotted-input" />
+                  <select id="field-facility-name" class="full-dotted-select">
+                    <option value=""></option>
+                    <optgroup label="PKD">
+                      <option value="PKD BALING">PKD BALING</option>
+                      <option value="PKD BANDAR BAHARU">PKD BANDAR BAHARU</option>
+                      <option value="PKD KOTA SETAR">PKD KOTA SETAR</option>
+                      <option value="PKD KUALA MUDA">PKD KUALA MUDA</option>
+                      <option value="PKD KUBANG PASU">PKD KUBANG PASU</option>
+                      <option value="PKD KULIM">PKD KULIM</option>
+                      <option value="PKD LANGKAWI">PKD LANGKAWI</option>
+                      <option value="PKD PADANG TERAP">PKD PADANG TERAP</option>
+                      <option value="PKD PENDANG">PKD PENDANG</option>
+                      <option value="PKD SIK">PKD SIK</option>
+                      <option value="PKD YAN">PKD YAN</option>
+                    </optgroup>
+                    <optgroup label="HOSPITAL">
+                      <option value="HOSPITAL BALING">HOSPITAL BALING</option>
+                      <option value="HOSPITAL SULTANAH BAHIYAH">HOSPITAL SULTANAH BAHIYAH</option>
+                      <option value="HOSPITAL SULTANAH MALIHA">HOSPITAL SULTANAH MALIHA</option>
+                      <option value="HOSPITAL JITRA">HOSPITAL JITRA</option>
+                      <option value="HOSPITAL KUALA NERANG">HOSPITAL KUALA NERANG</option>
+                      <option value="HOSPITAL SIK">HOSPITAL SIK</option>
+                      <option value="HOSPITAL SULTAN ABDUL HALIM">HOSPITAL SULTAN ABDUL HALIM</option>
+                      <option value="HOSPITAL YAN">HOSPITAL YAN</option>
+                      <option value="HOSPITAL PENDANG">HOSPITAL PENDANG</option>
+                      <option value="HOSPITAL KULIM">HOSPITAL KULIM</option>
+                    </optgroup>
+                    <optgroup label="PKPD">
+                      <option value="PKPD BALING">PKPD BALING</option>
+                      <option value="PKPD BANDAR BAHARU">PKPD BANDAR BAHARU</option>
+                      <option value="PKPD KOTA SETAR">PKPD KOTA SETAR</option>
+                      <option value="PKPD KUALA MUDA">PKPD KUALA MUDA</option>
+                      <option value="PKPD KUBANG PASU">PKPD KUBANG PASU</option>
+                      <option value="PKPD KULIM">PKPD KULIM</option>
+                      <option value="PKPD LANGKAWI">PKPD LANGKAWI</option>
+                      <option value="PKPD PADANG TERAP">PKPD PADANG TERAP</option>
+                      <option value="PKPD PENDANG">PKPD PENDANG</option>
+                      <option value="PKPD SIK">PKPD SIK</option>
+                      <option value="PKPD YAN">PKPD YAN</option>
+                    </optgroup>
+                  </select>
                 </div>
               </div>
             </div>
@@ -158,13 +215,16 @@
           <!-- 4. Nationality -->
           <div class="particular-row">
             <span>4.&nbsp; Nationality :</span>
-            <input type="text" id="field-nationality" class="dotted-input" />
+            <input type="text" id="field-nationality" list="nationality-list" class="dotted-input" />
+            <datalist id="nationality-list">
+              <option value="MALAYSIA"></option>
+            </datalist>
           </div>
 
           <!-- 5. Age on the 1st of January -->
           <div class="particular-row">
             <span>5.&nbsp; Age on the 1<sup>st</sup> of January :</span>
-            <div class="char-boxes" data-box-group="age-jan1" data-count="2"></div>
+            <div class="char-boxes" data-box-group="age-jan1" data-count="2" data-digits-only="true"></div>
             <span>Years</span>
           </div>
 
@@ -177,31 +237,26 @@
           <!-- 7. Contact number -->
           <div class="particular-row">
             <span>7.&nbsp; Contact number :</span>
-            <input type="text" id="field-contact" class="dotted-input" style="flex: 0 0 260px;" />
+            <input type="text" id="field-contact" class="dotted-input digits-only-input" inputmode="numeric" pattern="[0-9]*" style="flex: 0 0 260px;" />
           </div>
 
           <!-- >>8. Date of injury -->
           <div class="particular-row stack-row">
-            <div class="row-inline" style="gap: 32px;">
+            <div class="row-inline" style="gap: 18px;">
               <span style="min-width: 112px;"><span class="reg-mark">&raquo;</span>8. Date of injury :</span>
-              <div class="date-blocks-wrapper">
-                <div class="date-block">
-                  <span class="date-block-caption">month</span>
-                  <div class="char-boxes" data-box-group="injury-month" data-count="2"></div>
-                </div>
-                <div class="date-block">
-                  <span class="date-block-caption">day</span>
-                  <div class="char-boxes" data-box-group="injury-day" data-count="2"></div>
-                </div>
-                <div class="date-block">
-                  <span class="date-block-caption">year</span>
-                  <div class="char-boxes" data-box-group="injury-year" data-count="2"></div>
-                </div>
+              <div class="picker-combo" style="width: 150px;">
+                <input type="text" id="field-injury-date" class="dotted-input date-slash-input" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric" />
+                <button type="button" class="picker-icon-btn no-print" data-picker-for="field-injury-date" title="Pilih tarikh daripada kalendar">&#128197;</button>
+                <input type="date" class="hidden-native-picker" data-sync-target="field-injury-date" tabindex="-1" />
               </div>
             </div>
             <div class="row-inline" style="padding-left: 18px;">
               <span>Time :</span>
-              <input type="text" id="field-injury-time" class="dotted-input" style="flex: 0 0 140px;" />
+              <div class="picker-combo time-combo" style="width: 118px;">
+                <input type="text" id="field-injury-time" class="dotted-input time-colon-input" placeholder="hh:mm" maxlength="5" inputmode="numeric" />
+                <button type="button" class="picker-icon-btn no-print" data-time-picker-for="field-injury-time" title="Pilih masa">&#128338;</button>
+                <input type="time" class="hidden-native-picker" data-time-sync-target="field-injury-time" tabindex="-1" />
+              </div>
               <div class="asterisk-selector" data-selector="injury-ampm">
                 *<span class="asterisk-choice" data-val="AM">am</span> / <span class="asterisk-choice" data-val="PM">pm</span>
               </div>
@@ -210,29 +265,24 @@
 
           <!-- 9. Date and time of seeking treatment from medical / ID team -->
           <div class="particular-row stack-row">
-            <div class="row-inline" style="gap: 26px; align-items: flex-start;">
+            <div class="row-inline" style="gap: 18px; align-items: center;">
               <div style="line-height: 1.32; min-width: 248px;">
                 9.&nbsp; Date and time of seeking treatment from<br />
                 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;medical / ID team :
               </div>
-              <div class="date-blocks-wrapper">
-                <div class="date-block">
-                  <span class="date-block-caption">month</span>
-                  <div class="char-boxes" data-box-group="report-month" data-count="2"></div>
-                </div>
-                <div class="date-block">
-                  <span class="date-block-caption">day</span>
-                  <div class="char-boxes" data-box-group="report-day" data-count="2"></div>
-                </div>
-                <div class="date-block">
-                  <span class="date-block-caption">year</span>
-                  <div class="char-boxes" data-box-group="report-year" data-count="2"></div>
-                </div>
+              <div class="picker-combo" style="width: 150px;">
+                <input type="text" id="field-report-date" class="dotted-input date-slash-input" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric" />
+                <button type="button" class="picker-icon-btn no-print" data-picker-for="field-report-date" title="Pilih tarikh daripada kalendar">&#128197;</button>
+                <input type="date" class="hidden-native-picker" data-sync-target="field-report-date" tabindex="-1" />
               </div>
             </div>
             <div class="row-inline" style="padding-left: 18px;">
               <span>Time :</span>
-              <input type="text" id="field-report-time" class="dotted-input" style="flex: 0 0 140px;" />
+              <div class="picker-combo time-combo" style="width: 118px;">
+                <input type="text" id="field-report-time" class="dotted-input time-colon-input" placeholder="hh:mm" maxlength="5" inputmode="numeric" />
+                <button type="button" class="picker-icon-btn no-print" data-time-picker-for="field-report-time" title="Pilih masa">&#128338;</button>
+                <input type="time" class="hidden-native-picker" data-time-sync-target="field-report-time" tabindex="-1" />
+              </div>
               <div class="asterisk-selector" data-selector="report-ampm">
                 *<span class="asterisk-choice" data-val="AM">am</span> / <span class="asterisk-choice" data-val="PM">pm</span>
               </div>
@@ -242,19 +292,21 @@
           <!-- 10. Duration of employment in Ministry of Health -->
           <div class="particular-row">
             <span>10. Duration of employment in Ministry of Health :</span>
-            <div class="char-boxes" data-box-group="moh-duration" data-count="2"></div>
-            <div class="asterisk-selector" data-selector="moh-unit">
+            <div class="char-boxes" data-box-group="moh-duration" data-count="2" data-digits-only="true"></div>
+            <div class="asterisk-selector" data-selector="moh-unit" id="moh-unit-selector">
               *<span class="asterisk-choice" data-val="MONTH">month (s)</span> / <span class="asterisk-choice" data-val="YEAR">Year (s)</span>
             </div>
+            <span class="duration-comment no-print">(Please select "month (s) or Year (s)" after fill in the duration (NO.))</span>
           </div>
 
           <!-- 11. Duration of work in handling sharps -->
           <div class="particular-row no-border">
             <span>11. Duration of work in handling sharps :</span>
-            <div class="char-boxes" data-box-group="sharps-duration" data-count="2"></div>
-            <div class="asterisk-selector" data-selector="sharps-unit">
+            <div class="char-boxes" data-box-group="sharps-duration" data-count="2" data-digits-only="true"></div>
+            <div class="asterisk-selector" data-selector="sharps-unit" id="sharps-unit-selector">
               *<span class="asterisk-choice" data-val="MONTH">month (s)</span> / <span class="asterisk-choice" data-val="YEAR">Year (s)</span>
             </div>
+            <span class="duration-comment no-print">(Please select "month (s) or Year (s)" after fill in the duration (NO.))</span>
           </div>
 
           <div class="double-bottom-rule"></div>
@@ -324,6 +376,7 @@
             <option value="KLINIK KESIHATAN">KLINIK KESIHATAN</option>
             <option value="KLINIK PERGIGIAN">KLINIK PERGIGIAN</option>
             <option value="PKD">PKD</option>
+            <option value="PKPD">PKPD</option>
             <option value="OTHERS">OTHERS</option>
           </select>
         </div>
@@ -377,7 +430,7 @@
         </div>
         <div class="wehu-field">
           <label for="lookup-date">DATE OF ENTRY (dd/mm/yyyy)</label>
-          <input type="text" id="lookup-date" placeholder="Contoh: 23/11/2026" />
+          <input type="text" id="lookup-date" class="date-slash-input" maxlength="10" inputmode="numeric" placeholder="DD/MM/YYYY" />
         </div>
       </div>
       <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px;">
