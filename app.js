@@ -1,6 +1,8 @@
 // OHU/SIS-1 Digital Form (Exact Replica of Document_261123_124724.pdf) + WEHU 52-Column Mapper
 
 const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby8hqJM3Phedyj-vc5egBcd56XB7vCXhFCaDIPaFCZ77qKGPQJ8pg6ZRxBktDvDhok8Kw/exec";
+const SPREADSHEET_ID = "1EUURTiEpuX9cmlAtNeKyme_ani_spxQh-6eI5Jt_zlw";
+const PUBLIC_FORM_BASE_URL = "https://ahashushami.github.io/borang-ohu-sis1/";
 
 const WEHU_52_HEADERS = [
   "NO",
@@ -998,38 +1000,460 @@ function fillDemoData() {
   showStatus("info", "Contoh data telah diisi. Sila semak paparan 4 halaman borang di bawah.");
 }
 
-function resetForm() {
+function clearAllFormFields() {
   document.getElementById("ohu-form").reset();
+  document.getElementById("reg-case-code").value = "";
+  document.getElementById("reg-facility-type").value = "";
+  document.getElementById("reg-unit").value = "";
+  document.getElementById("reg-shiftwork").value = "";
   document.querySelectorAll(".char-box").forEach(b => (b.value = ""));
-  document.querySelectorAll("[data-slash-container] .asterisk-choice").forEach(c => {
+  document.querySelectorAll(".asterisk-selector .asterisk-choice").forEach(c => {
     c.classList.remove("selected", "struck");
   });
+  document.querySelectorAll(".box-check").forEach(cb => (cb.checked = false));
+}
+
+function resetForm() {
+  clearAllFormFields();
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState(null, "", window.location.pathname);
+  }
   showStatus("info", "Borang telah dikosongkan.");
+}
+
+function buildRekodLinkForRow(row) {
+  const no = String(row[0] || "").trim();
+  const dateEntry = String(row[1] || "").trim();
+  const ic = String(row[8] || "").replace(/^'/, "").trim();
+  if (!ic && !dateEntry) return "";
+  const base = window.location.hostname.includes("github.io")
+    ? PUBLIC_FORM_BASE_URL
+    : window.location.origin + window.location.pathname;
+  const params = new URLSearchParams();
+  if (ic) params.set("ic", ic);
+  if (dateEntry) params.set("date", dateEntry);
+  if (no && no !== "(Auto)") params.set("no", no);
+  const encodedRow = encodeURIComponent(row.slice(0, 52).map(v => String(v ?? "").replace(/^'/, "")).join("|~|"));
+  return `${base}?${params.toString()}#d=${encodedRow}`;
+}
+
+function parseDateDdMmYyyy(dateStr) {
+  const s = String(dateStr || "").trim();
+  if (!s) return null;
+  const parts = s.split(/[\/\-]/);
+  if (parts.length !== 3) return null;
+  // Handle dd/mm/yyyy or yyyy-mm-dd
+  if (parts[0].length === 4) {
+    return { dd: parts[2].padStart(2, "0"), mm: parts[1].padStart(2, "0"), yy: parts[0].slice(-2) };
+  }
+  return { dd: parts[0].padStart(2, "0"), mm: parts[1].padStart(2, "0"), yy: parts[2].slice(-2) };
+}
+
+function parseTimeForForm(timeStr) {
+  const s = String(timeStr || "").trim();
+  if (!s) return { timeText: "", ampm: "" };
+  const ampmMatch = s.match(/^(\d{1,2}:\d{2})(?::\d{2})?\s*(AM|PM)$/i);
+  if (ampmMatch) {
+    return { timeText: ampmMatch[1].padStart(5, "0"), ampm: ampmMatch[2].toUpperCase() };
+  }
+  const h24Match = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (h24Match) {
+    let hr = parseInt(h24Match[1], 10);
+    const min = h24Match[2];
+    const ampm = hr >= 12 ? "PM" : "AM";
+    if (hr === 0) hr = 12;
+    else if (hr > 12) hr -= 12;
+    return { timeText: `${String(hr).padStart(2, "0")}:${min}`, ampm };
+  }
+  return { timeText: s, ampm: "" };
+}
+
+function restoreSectionCheckboxes(sectionName, cellText) {
+  const raw = String(cellText || "").trim();
+  if (!raw) return;
+  const tokens = raw.split(";").map(t => t.trim()).filter(Boolean);
+  const cbs = Array.from(document.querySelectorAll(`.box-check[data-section="${sectionName}"]`));
+
+  tokens.forEach(tok => {
+    const lowTok = tok.toLowerCase();
+    // 1. Direct checkbox value match
+    const directCb = cbs.find(cb => cb.value.toLowerCase() === lowTok);
+    if (directCb) {
+      directCb.checked = true;
+      return;
+    }
+    // 2. Slash choice match inside this section
+    for (const cb of cbs) {
+      const itemId = cb.dataset.itemId;
+      const container = document.querySelector(`[data-slash-container="${itemId}"]`);
+      if (!container) continue;
+      const choices = Array.from(container.querySelectorAll(".asterisk-choice"));
+      const matchedChoice = choices.find(
+        ch => ch.dataset.val.toLowerCase() === lowTok || ch.textContent.trim().toLowerCase() === lowTok
+      );
+      if (matchedChoice) {
+        choices.forEach(c => {
+          c.classList.remove("selected");
+          c.classList.add("struck");
+        });
+        matchedChoice.classList.remove("struck");
+        matchedChoice.classList.add("selected");
+        cb.checked = true;
+        break;
+      }
+    }
+  });
+}
+
+function fillMultiLineInputs(ids, fullText, maxPerLine = 82) {
+  const s = String(fullText || "").trim();
+  if (!s) return;
+  const words = s.split(/\s+/);
+  let lineIdx = 0;
+  let current = "";
+  words.forEach(w => {
+    if (lineIdx < ids.length - 1 && (current + " " + w).trim().length > maxPerLine) {
+      const el = document.getElementById(ids[lineIdx]);
+      if (el) el.value = current.trim();
+      lineIdx++;
+      current = w;
+    } else {
+      current = (current + " " + w).trim();
+    }
+  });
+  const lastEl = document.getElementById(ids[lineIdx]);
+  if (lastEl) lastEl.value = current.trim();
+}
+
+function populateFormFrom52Row(rawRow) {
+  if (!Array.isArray(rawRow) || rawRow.length < 10) return;
+  clearAllFormFields();
+
+  const row = [];
+  for (let i = 0; i < 52; i++) {
+    row.push(String(rawRow[i] ?? "").replace(/^'/, "").trim());
+  }
+
+  // Page 1 & WEHU Admin Fields
+  document.getElementById("field-notif-date").value = row[1];
+  document.getElementById("reg-case-code").value = row[2];
+  document.getElementById("field-state").value = row[3];
+  document.getElementById("field-district").value = row[4];
+  document.getElementById("reg-facility-type").value = row[5];
+  document.getElementById("field-facility-name").value = row[6];
+  document.getElementById("field-name").value = row[7];
+
+  // NRIC New / Old
+  const icVal = row[8];
+  const bothIcMatch = icVal.match(/^([0-9A-Za-z-]+)\s*\(Old:\s*([^)]+)\)$/i);
+  if (bothIcMatch) {
+    setBoxGroupValue("nric-new", bothIcMatch[1].replace(/[^0-9A-Za-z]/g, ""));
+    setBoxGroupValue("nric-old", bothIcMatch[2].replace(/[^0-9A-Za-z]/g, ""));
+  } else {
+    const cleanIc = icVal.replace(/[^0-9A-Za-z]/g, "");
+    if (/^\d{9,12}$/.test(cleanIc)) {
+      const paddedIc = cleanIc.length === 11 ? "0" + cleanIc : cleanIc;
+      setBoxGroupValue("nric-new", paddedIc);
+    } else if (cleanIc) {
+      setBoxGroupValue("nric-old", cleanIc);
+    }
+  }
+
+  // Gender
+  const genderUp = row[9].toUpperCase();
+  if (genderUp === "MALE") document.getElementById("gender-male").checked = true;
+  if (genderUp === "FEMALE") document.getElementById("gender-female").checked = true;
+
+  // Nationality
+  if (row[10].toUpperCase() === "OTHERS" && row[11]) {
+    document.getElementById("field-nationality").value = row[11];
+  } else {
+    document.getElementById("field-nationality").value = row[10];
+  }
+
+  // Age on 1st Jan
+  if (row[12]) {
+    setBoxGroupValue("age-jan1", /^\d$/.test(row[12]) ? "0" + row[12] : row[12]);
+  }
+
+  document.getElementById("field-department").value = row[14];
+  document.getElementById("reg-unit").value = row[15];
+  document.getElementById("field-contact").value = row[16];
+
+  // Injury Date & Time
+  const injD = parseDateDdMmYyyy(row[17]);
+  if (injD) {
+    setBoxGroupValue("injury-month", injD.mm);
+    setBoxGroupValue("injury-day", injD.dd);
+    setBoxGroupValue("injury-year", injD.yy);
+  }
+  const injT = parseTimeForForm(row[18]);
+  document.getElementById("field-injury-time").value = injT.timeText;
+  if (injT.ampm) selectAsteriskValue("injury-ampm", injT.ampm);
+
+  document.getElementById("reg-shiftwork").value = row[19];
+
+  // Report Date & Time
+  const repD = parseDateDdMmYyyy(row[20]);
+  if (repD) {
+    setBoxGroupValue("report-month", repD.mm);
+    setBoxGroupValue("report-day", repD.dd);
+    setBoxGroupValue("report-year", repD.yy);
+  }
+  const repT = parseTimeForForm(row[21]);
+  document.getElementById("field-report-time").value = repT.timeText;
+  if (repT.ampm) selectAsteriskValue("report-ampm", repT.ampm);
+
+  // MOH & Sharps Duration
+  if (row[23]) {
+    setBoxGroupValue("moh-duration", /^\d$/.test(row[23]) ? "0" + row[23] : row[23]);
+  }
+  if (row[24]) selectAsteriskValue("moh-unit", row[24].toUpperCase().startsWith("MONTH") ? "MONTH" : "YEAR");
+
+  if (row[25]) {
+    setBoxGroupValue("sharps-duration", /^\d$/.test(row[25]) ? "0" + row[25] : row[25]);
+  }
+  if (row[26]) selectAsteriskValue("sharps-unit", row[26].toUpperCase().startsWith("MONTH") ? "MONTH" : "YEAR");
+
+  // Page 2: Job Category & Specify
+  restoreSectionCheckboxes("job_category", row[28]);
+  if (row[29]) {
+    const jobParts = row[29].split(";").map(s => s.trim()).filter(Boolean);
+    const activeJobInputs = [
+      document.querySelector('.box-check[data-item-id="job_spec"]')?.checked ? "job-spec-input" : null,
+      document.querySelector('.box-check[data-item-id="job_trainee"]')?.checked ? "job-trainee-input" : null,
+      document.querySelector('.box-check[data-item-id="job_others"]')?.checked ? "job-others-input" : null
+    ].filter(Boolean);
+    if (activeJobInputs.length === 1) {
+      document.getElementById(activeJobInputs[0]).value = row[29];
+    } else if (activeJobInputs.length > 1) {
+      activeJobInputs.forEach((inpId, idx) => {
+        if (jobParts[idx]) document.getElementById(inpId).value = jobParts[idx];
+      });
+    } else {
+      document.getElementById("job-others-input").value = row[29];
+    }
+  }
+
+  // Page 2: Place of Occurrence & Specify
+  restoreSectionCheckboxes("place_occurrence", row[30]);
+  if (row[31]) {
+    const locParts = row[31].split(";").map(s => s.trim()).filter(Boolean);
+    const hasWard =
+      document.querySelector('.box-check[data-item-id="loc_ward_a"]')?.checked ||
+      document.querySelector('.box-check[data-item-id="loc_ward_b"]')?.checked ||
+      /\bward\b/i.test(row[30]);
+    const hasElsewhere = document.querySelector('.box-check[data-item-id="loc_ward_c"]')?.checked;
+    const hasLocOthers = document.querySelector('.box-check[data-item-id="loc_others"]')?.checked;
+
+    const activeLocInputs = [
+      hasWard ? "loc-ward-input" : null,
+      hasElsewhere ? "loc-elsewhere-input" : null,
+      hasLocOthers ? "loc-others-input" : null
+    ].filter(Boolean);
+
+    if (activeLocInputs.length === 1) {
+      document.getElementById(activeLocInputs[0]).value = row[31];
+    } else if (activeLocInputs.length > 1) {
+      activeLocInputs.forEach((inpId, idx) => {
+        if (locParts[idx]) document.getElementById(inpId).value = locParts[idx];
+      });
+    } else {
+      document.getElementById("loc-ward-input").value = row[31];
+    }
+  }
+
+  // Section 3a - 3g
+  restoreSectionCheckboxes("how_3a", row[33]);
+  restoreSectionCheckboxes("how_3b", row[34]);
+  restoreSectionCheckboxes("how_3c", row[35]);
+  restoreSectionCheckboxes("how_3d", row[36]);
+  restoreSectionCheckboxes("how_3e", row[37]);
+  restoreSectionCheckboxes("how_3f", row[38]);
+  if (row[39]) document.getElementById("unusual-loc-input").value = row[39];
+  if (row[40]) fillMultiLineInputs(["other-circumstances-1", "other-circumstances-2"], row[40]);
+
+  // Section 4a - 4c & 5
+  restoreSectionCheckboxes("dev_4a", row[42]);
+  if (row[43]) document.getElementById("needle-others-input").value = row[43];
+  restoreSectionCheckboxes("dev_4b", row[44]);
+  if (row[45]) document.getElementById("glass-others-input").value = row[45];
+  restoreSectionCheckboxes("dev_4c", row[46]);
+  if (row[47]) document.getElementById("surgical-others-1").value = row[47];
+  restoreSectionCheckboxes("dev_5_contam", row[48]);
+
+  // Section 6
+  restoreSectionCheckboxes("proc_6", row[49]);
+  if (row[50]) fillMultiLineInputs(["proc-nonmed-1", "proc-nonmed-2"], row[50]);
+  if (row[51]) fillMultiLineInputs(["proc-others-1", "proc-others-2", "proc-others-3", "proc-others-4"], row[51]);
+
+  const dispNo = row[0] ? `#${row[0]} ` : "";
+  showStatus(
+    "success",
+    `Rekod ${dispNo}dibuka semula mengikut IC "${row[8]}" dan Tarikh Masuk "${row[1]}". Semua 4 halaman borang telah diisi.`
+  );
+}
+
+function fetchRowViaGvizJsonp(targetIc, targetDate, targetNo) {
+  return new Promise((resolve, reject) => {
+    const cbName = "__ohuGvizCb_" + Date.now();
+    const script = document.createElement("script");
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(new Error("Masa menunggu sambungan Google Sheet tamat."));
+    }, 10000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = function (resp) {
+      cleanup();
+      try {
+        if (!resp || resp.status === "error" || !resp.table || !resp.table.rows) {
+          reject(new Error("Tidak dapat membaca jadual Google Sheet secara terus."));
+          return;
+        }
+        const normIc = String(targetIc || "").replace(/^'/, "").trim().toUpperCase();
+        const normDate = String(targetDate || "").trim();
+        const normNo = String(targetNo || "").trim();
+
+        const rows = resp.table.rows.map(r => {
+          const arr = [];
+          for (let i = 0; i < 52; i++) {
+            const cell = r.c && r.c[i];
+            const val = cell ? (cell.f != null ? String(cell.f) : (cell.v != null ? String(cell.v) : "")) : "";
+            arr.push(val.replace(/^'/, "").trim());
+          }
+          return arr;
+        });
+
+        for (let i = rows.length - 1; i >= 0; i--) {
+          const r = rows[i];
+          const rNo = r[0];
+          const rDate = r[1];
+          const rIc = r[8].toUpperCase();
+          const icOk = !normIc || rIc === normIc || rIc.startsWith(normIc);
+          const dateOk = !normDate || rDate === normDate;
+          const noOk = !normNo || rNo === normNo;
+          if (icOk && dateOk && noOk) {
+            resolve(r);
+            return;
+          }
+        }
+        reject(new Error(`Tiada rekod dijumpai untuk IC "${targetIc}" pada tarikh "${targetDate}".`));
+      } catch (e) {
+        reject(e);
+      }
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("Gagal memuatkan data daripada Google Sheet (pastikan anda log masuk akaun Google atau gunakan pautan Rekod_Link terus daripada Sheet)."));
+    };
+
+    script.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:${cbName}&sheet=Sheet1`;
+    document.head.appendChild(script);
+  });
+}
+
+async function lookupAndLoadRecord(ic, dateEntry, no = "") {
+  const cleanIc = String(ic || "").replace(/^'/, "").trim();
+  const cleanDate = String(dateEntry || "").trim();
+  if (!cleanIc && !no) {
+    showStatus("error", "Sila masukkan NEW IC / PASSPORT NO. dan DATE OF ENTRY (dd/mm/yyyy).");
+    return;
+  }
+
+  showStatus("info", `Sedang mencari rekod bagi IC "${cleanIc}" dan Tarikh "${cleanDate}"...`);
+
+  // 1. Try GAS Web App doGet first
+  try {
+    const q = new URLSearchParams();
+    if (cleanIc) q.set("ic", cleanIc);
+    if (cleanDate) q.set("date", cleanDate);
+    if (no) q.set("no", no);
+    const resp = await fetch(`${GAS_WEB_APP_URL}?${q.toString()}`, { method: "GET", redirect: "follow" });
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data && data.ok && Array.isArray(data.row)) {
+        populateFormFrom52Row(data.row);
+        return;
+      }
+    }
+  } catch (_) {
+    // Fallback to Google Sheets gviz JSONP below
+  }
+
+  // 2. Fallback to Google Sheets gviz JSONP
+  try {
+    const row = await fetchRowViaGvizJsonp(cleanIc, cleanDate, no);
+    populateFormFrom52Row(row);
+  } catch (err) {
+    showStatus("error", err.message);
+  }
+}
+
+function handleInitialUrlRecordLoad() {
+  const params = new URLSearchParams(window.location.search);
+  const ic = params.get("ic") || "";
+  const dateEntry = params.get("date") || "";
+  const no = params.get("no") || "";
+
+  const hash = window.location.hash || "";
+  if (hash.startsWith("#d=")) {
+    try {
+      const encoded = hash.slice(3);
+      const decoded = decodeURIComponent(encoded);
+      const cols = decoded.split("|~|");
+      if (cols.length >= 50) {
+        populateFormFrom52Row(cols);
+        return;
+      }
+    } catch (e) {
+      console.error("Failed to decode Rekod_Link hash payload:", e);
+    }
+  }
+
+  if (ic || no) {
+    lookupAndLoadRecord(ic, dateEntry, no);
+  }
 }
 
 function openPreviewModal() {
   const row = build52ColumnRow("(Auto)");
+  const rekodLink = buildRekodLinkForRow(row);
+  const allHeaders = [...WEHU_52_HEADERS, "Rekod_Link"];
+  const allValues = [...row, rekodLink];
+
   const container = document.getElementById("preview-table-container");
   let html = `<table style="width:100%;border-collapse:collapse;font-size:12.5px;">
     <thead>
       <tr style="background:#1e293b;color:#fff;text-align:left;">
         <th style="padding:8px 10px;width:70px;">Lajur</th>
-        <th style="padding:8px 10px;width:46%;">Pemboleh Ubah (WEHU Sheet 1)</th>
+        <th style="padding:8px 10px;width:44%;">Pemboleh Ubah (WEHU Sheet 1)</th>
         <th style="padding:8px 10px;">Nilai Semasa</th>
       </tr>
     </thead>
     <tbody>`;
 
-  WEHU_52_HEADERS.forEach((h, idx) => {
-    const colLetter = idx < 26
-      ? String.fromCharCode(65 + idx)
-      : "A" + String.fromCharCode(65 + (idx - 26));
-    const val = row[idx] || "";
+  allHeaders.forEach((h, idx) => {
+    let colLetter = "";
+    if (idx < 26) colLetter = String.fromCharCode(65 + idx);
+    else if (idx < 52) colLetter = "A" + String.fromCharCode(65 + (idx - 26));
+    else colLetter = "B" + String.fromCharCode(65 + (idx - 52));
+
+    const val = allValues[idx] || "";
     const bg = idx % 2 === 0 ? "#ffffff" : "#f8fafc";
+    const cellHtml = idx === 52 && val
+      ? `<a href="${val}" style="color:#2563eb;text-decoration:underline;word-break:break-all;">Buka Borang (Pautan Rekod_Link)</a>`
+      : (val || "—");
     html += `<tr style="background:${bg};border-bottom:1px solid #e2e8f0;">
       <td style="padding:6px 10px;font-weight:700;color:#2563eb;">${colLetter} (${idx + 1})</td>
       <td style="padding:6px 10px;font-weight:600;color:#0f172a;">${h}</td>
-      <td style="padding:6px 10px;color:${val ? "#065f46" : "#94a3b8"};font-family:monospace;">${val || "—"}</td>
+      <td style="padding:6px 10px;color:${val ? "#065f46" : "#94a3b8"};font-family:monospace;">${cellHtml}</td>
     </tr>`;
   });
 
@@ -1128,6 +1552,22 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("wehu-modal").classList.remove("open");
   });
 
+  document.getElementById("btn-open-record").addEventListener("click", () => {
+    document.getElementById("lookup-modal").classList.add("open");
+  });
+  document.getElementById("btn-close-lookup").addEventListener("click", () => {
+    document.getElementById("lookup-modal").classList.remove("open");
+  });
+  document.getElementById("btn-cancel-lookup").addEventListener("click", () => {
+    document.getElementById("lookup-modal").classList.remove("open");
+  });
+  document.getElementById("btn-do-lookup").addEventListener("click", () => {
+    const ic = document.getElementById("lookup-ic").value.trim();
+    const dt = document.getElementById("lookup-date").value.trim();
+    document.getElementById("lookup-modal").classList.remove("open");
+    lookupAndLoadRecord(ic, dt);
+  });
+
   document.getElementById("btn-demo").addEventListener("click", fillDemoData);
   document.getElementById("btn-reset").addEventListener("click", resetForm);
   document.getElementById("btn-preview-row").addEventListener("click", openPreviewModal);
@@ -1136,4 +1576,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.getElementById("btn-print").addEventListener("click", () => window.print());
   document.getElementById("btn-submit").addEventListener("click", submitToGoogleSheet);
+
+  // Auto-open record if navigated via Rekod_Link (?ic=...&date=... / #d=...)
+  handleInitialUrlRecordLoad();
 });

@@ -24,10 +24,11 @@
     </nav>
 
     <div class="control-actions">
+      <button type="button" class="btn btn-outline" id="btn-open-record">Buka Rekod (IC &amp; Tarikh)</button>
       <button type="button" class="btn btn-secondary" id="btn-wehu-meta">Medan Tambahan Sheet</button>
       <button type="button" class="btn btn-secondary" id="btn-demo">Isi Contoh</button>
       <button type="button" class="btn btn-secondary" id="btn-reset">Kosongkan</button>
-      <button type="button" class="btn btn-outline" id="btn-preview-row">Semak 52 Lajur</button>
+      <button type="button" class="btn btn-outline" id="btn-preview-row">Semak Lajur Sheet</button>
       <button type="button" class="btn btn-print" id="btn-print">Cetak / PDF</button>
       <button type="button" class="btn btn-primary" id="btn-submit">Hantar ke Google Sheet</button>
     </div>
@@ -349,14 +350,41 @@
     </div>
   </div>
 
-  <!-- Modal 2: Preview 52-Column Row -->
+  <!-- Modal 2: Preview 53-Column Row -->
   <div class="modal-backdrop" id="preview-modal">
     <div class="modal-card" style="max-width: 860px;">
       <div class="modal-header">
-        <h3>Pratonton Data 52 Lajur (FORMAT OHU SIS GDRIVE WEHU SHEET 1)</h3>
+        <h3>Pratonton Data Google Sheet (52 Lajur WEHU + Rekod_Link)</h3>
         <button type="button" class="modal-close" id="btn-close-preview">&times;</button>
       </div>
       <div id="preview-table-container" style="max-height: 60vh; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;"></div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Open Record by (NEW IC / PASSPORT NO., DATE OF ENTRY) -->
+  <div class="modal-backdrop" id="lookup-modal">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>Buka Semula Rekod Borang</h3>
+        <button type="button" class="modal-close" id="btn-close-lookup">&times;</button>
+      </div>
+      <p style="font-size:12.5px;color:#475569;margin-bottom:14px;">
+        Masukkan <strong>NEW IC / PASSPORT NO.</strong> dan <strong>DATE OF ENTRY (dd/mm/yyyy)</strong> untuk memuatkan semula data rekod daripada Google Sheet ke dalam borang, atau klik terus pautan pada lajur <strong>Rekod_Link</strong> di dalam Google Sheet.
+      </p>
+      <div class="wehu-extra-grid" style="grid-template-columns: 1fr;">
+        <div class="wehu-field">
+          <label for="lookup-ic">NEW IC / PASSPORT NO. (Contoh: 020412025438)</label>
+          <input type="text" id="lookup-ic" placeholder="Contoh: 020412025438" />
+        </div>
+        <div class="wehu-field">
+          <label for="lookup-date">DATE OF ENTRY (dd/mm/yyyy)</label>
+          <input type="text" id="lookup-date" placeholder="Contoh: 23/11/2026" />
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px;">
+        <button type="button" class="btn btn-secondary" id="btn-cancel-lookup">Batal</button>
+        <button type="button" class="btn btn-primary" id="btn-do-lookup">Cari &amp; Buka Borang</button>
+      </div>
     </div>
   </div>
 
